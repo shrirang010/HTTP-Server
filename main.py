@@ -1,26 +1,9 @@
 import argparse
-import os
 from config import *
+from httpServer import Server
 
 
-parser = argparse.ArgumentParser()
-
-
-def start(PORT):
-    os.system(f'python3 httpServer.py {PORT}')    # starts the http server
-    while True:
-        print(f"Starting the HTTP Server using port {PORT}")
-        print("*"*25, "\n")
-        print("Displaying the main menu...\n")
-        print("Press q to quit")
-        choice = input()
-        if choice == 'q':
-            print("Quitting the server...")
-            exit(0)
-        else:
-            print(f"Invalid input: {choice}")
-            print("*"*25, "\n\n\n")
-            continue
+parser = argparse.ArgumentParser()    
 
 
 def pre_start():
@@ -31,7 +14,8 @@ def pre_start():
     PORT = http_port.port
 
     if http_port is not None:
-        start(PORT)
+        driver_obj = Server(IP, PORT)
+        driver_obj.main_menu()
 
 
 if __name__ == '__main__':

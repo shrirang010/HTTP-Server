@@ -10,12 +10,10 @@ class Server:
         self.client_threads = []
         self.server_socket = socket(AF_INET, SOCK_STREAM)  # TCP socket
         self.server_socket.bind(('', self.port))
-        self.server_socket.listen(1)
+        
 
     def main_menu(self):
         while True:
-            print(f"Starting the HTTP Server using port {self.port}")
-            print("*"*25, "\n")
             print("Displaying the main menu...\n")
             print("Press s to start the server")
             print("Press q to exit the program!")
@@ -34,7 +32,8 @@ class Server:
                 continue
 
     def server(self):
-        print("Inside server method...")
+        print("Starting the server...")
+        self.server_socket.listen(1)
         print(f"Go to browser at : http://{self.ip}/{self.port}")
         # print("Server Port number : {self.port}")
 

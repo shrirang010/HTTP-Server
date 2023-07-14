@@ -6,7 +6,7 @@ print_lock = threading.Lock()
 
 def thread_client(client):
     while(True):
-        data=client.recv(1024)
+        data=client.recv(1024).decode('utf-8')
         if(data == "exit"):
                 client.close()
         

@@ -1,3 +1,2 @@
-import os
-
 IP = '127.0.0.1'
+MAX_CLIENT_REQUESTS = 10

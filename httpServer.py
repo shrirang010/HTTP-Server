@@ -1,8 +1,20 @@
 import time
 from socket import *
 from config import *
+import socket
+from _thread import *
+import threading
+
+class HTTP_methods:
+    def GET_METHOD(CLIENT_SOCKET,ADDRESS,REQUEST_MSG):
+        #Preparing http get response message
+        version="HTTP/1.1"
+        status_code="200"
+        status_text="OK"
 
 
+def HTTP_REQUEST_HANDLER():
+    pass
 class Server:
     def __init__(self, IP, PORT):
         self.ip = IP

@@ -26,8 +26,11 @@ def date():
     return conversation
 
 
-def handle_get_request(client, port):
+def handle_get_request(client, port,entity,serverport):
     print(f"Sending request to {client}:{port}")
+    print("Entity : ",entity)
+    isItFile = os.path.isfile(entity)
+    isItDir = os.path.isdir(entity)
     text = 'HTTP/1.1 200 OK'
     ip = '127.0.0.1'
     text += '\r\nContent-type: text/html; charset=utf-8'
@@ -49,7 +52,28 @@ def handle_get_request(client, port):
     text += '\r\n<body>'
     text += '\r\n<h1>Current Directory </h1>'
     text += '\r\n<p>Hello, world!</p>'
-    text += '\r\n<p>How you doing!!!!</p>'
+    if(isItDir):
+        dir_list = os.listdir(entity)    
+        for line in dir_list:
+            if entity == '/':
+                # link = 'http://' + ip + ':' + str(serverport) + entity + '/'+ line
+                l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
+                text += l
+            else:
+                link = 'http://' + ip + ':' + str(serverport) + entity + '/'+ line
+                l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
+                text += l
+    elif(isItFile):
+        try:
+            size = os.path.getsize(entity)
+            f = open(entity, "rb")
+            text += '\r\n</body>'
+            text += '\r\n</html>'
+            # client.send(text.encode())
+            client.sendfile(f)
+        except:
+            pass
+        return
     text += '\r\n</body>'
     text += '\r\n</html>'
     print("Sending response...")
@@ -101,15 +125,15 @@ def handle_post_request(client, port, ent_body):
     client.sendfile(f)
 
 
-def client_request_handler(server, client, port):
+def client_request_handler(server, client, port,serverport):
     try:
         while True:
             data = client.recv(1024)  # HTTP REQUEST FROM CLIENT
             print("Hello here is client http request from  PORT", port)
             print()  # Print empty line just for better output display
             req_body = data.decode('utf-8')
-            print(req_body)
-
+            print("req_body :::  ",req_body)
+            Request_body_array =req_body.split(' ')
             # CHECK IF METHOD IS GET/POST/DELETE
             print("Checking request method ......")
 
@@ -118,14 +142,20 @@ def client_request_handler(server, client, port):
 
             # call the appropriate method for the type of request here
             req_list = req_body.split('\r\n\r\n')
-            ent_body = req_list[1]
-            method = req_body.split(' ')[0]
-            # if method == 'GET':
-            #     handle_get_request(client, port)
+            # ent_body = req_list[1]   #CONTAINS HEADERS
+            method = Request_body_array[0]
+            # print()
+            entity=Request_body_array[1]
+            if(entity == '/'):
+                entity=os.getcwd()
+            else:   
+                entity =os.getcwd() + '/favicon.ico'
+            if method == 'GET':
+                handle_get_request(client, port,entity,serverport)
             # elif method == 'POST':
-            print("req_list : ", req_list)
-            print("ent_body : ", ent_body)
-            handle_post_request(client, port, ent_body)
+            # print("req_list : ", req_list)
+            # print("ent_body : ", ent_body)
+            # handle_post_request(client, port, ent_body)
 
             if not data:
                 print("IF NOT DATA!!!")
@@ -140,7 +170,7 @@ def client_request_handler(server, client, port):
 
 def main():
     HOST = "127.0.0.1"
-    PORT = 9532
+    PORT = 21009
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((HOST, PORT))
     server.listen(5)
@@ -148,7 +178,7 @@ def main():
         # TCP CONNECTION ESTABLISHED BETWEEN SERVER & CLIENT
         client, address, = server.accept()
         print("Connected to ", address[0], address[1])
-        start_new_thread(client_request_handler, (server, client, address[1]))
+        start_new_thread(client_request_handler, (server, client, address[1],PORT))
 
 
 if __name__ == '__main__':

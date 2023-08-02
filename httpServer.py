@@ -1,57 +1,82 @@
-import time
-from socket import *
 from config import *
 import socket
+import sys
 from _thread import *
-import threading
 
-class HTTP_methods:
-    def GET_METHOD(CLIENT_SOCKET,ADDRESS,REQUEST_MSG):
-        #Preparing http get response message
-        version="HTTP/1.1"
-        status_code="200"
-        status_text="OK"
+class httpMethods:
+    def __init__(self):
+        pass
 
+class server:
+    def __init__(self, PORT):
+        self.conn = True
+        self.HOST = SERVER_IP
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_threads_list = list()
+        self.f_flag = 0
 
-def HTTP_REQUEST_HANDLER():
-    pass
-class Server:
-    def __init__(self, IP, PORT):
-        self.ip = IP
-        self.port = PORT
-        self.client_threads = []
-        self.server_socket = socket(AF_INET, SOCK_STREAM)  # TCP socket
-        self.server_socket.bind(('', self.port))
-        
-
-    def main_menu(self):
+    def run_server(self):
+        print("\nINSIDE server.run_server()\n")
+        self.server_socket.bind((self.HOST, PORT))    # server will have the IP address 127.0.0.1 and will listen on port 'PORT'
+        self.server_socket.listen(5)
+        print('http://'+ self.HOST+':'+str(PORT)+'/')
+        print("client_threads_list : ",self.client_threads_list)
         while True:
-            print("Displaying the main menu...\n")
-            print("Press s to start the server")
-            print("Press q to exit the program!")
-            choice = input()
-            if choice.lower() == 's':
-                print("Starting the server...")
-                time.sleep(2)
-                self.server()
-            if choice.lower() == 'q':
-                print("Quitting the server...")
-                time.sleep(1)
-                exit(0)
-            else:
-                print(f"Invalid input: {choice}")
-                print("*"*25, "\n\n\n")
+            self.socket_connection, client_addr = self.server_socket.accept()
+            self.client_threads_list.append(self.socket_connection) 
+
+            if len(self.client_threads_list) > MAX_CLIENT_REQUESTS:
+                print("\n\n\nMAX CONNECTION LIMIT REACHED!\n\n")
+                # send status 503 and close connection
+                self.socket_connection.close()
                 continue
+            else:
+                print(f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
+                start_new_thread(self.client_handler())
 
-    def server(self):
-        print("Starting the server...")
-        self.server_socket.listen(1)
-        print(f"Go to browser at : http://{self.ip}/{self.port}")
-        # print("Server Port number : {self.port}")
+        self.server_socket.close()
+        
+        print("\nEND OF server.run_server()\n")
+        return
+    
+    def client_handler(self):
+        print("\nINSIDE server.client_handler()\n")
+        while True:
+            if not self.conn:
+                break
+            if SIZE != 0:
+                pass
+            else:
+                break
+            try:
+                self.message = self.socket_connection.recv(SIZE)
+            except Exception as e:
+                print(f"\nError while receiving data: {e}\n")
+            try:
+                self.f_flag = 0
+                self.message = self.message.decode('utf-8')
+                self.req_list = self.message.split('\r\n\r\n')
+            except UnicodeDecodeError:
+                self.f_flag = 1
+                self.req_list = self.message.split(b'\r\n\r\n')
+                self.req_list[0] = self.req_list[0].decode(errors='ignore')
+            print(f"message : {self.message}")
+            # write further code here
+        print("\nENDserver.client_handler()\n")
+        return
 
-        self.func("runs good till here")
-        # conn_socket, addr = self.server_socket.accept() # conn_socket -> socket to transfer data; addr -> address of socket on other end of conn
-        # self.client_threads.append(conn_socket) # add connections to the list of client threads
+    # def test(self):
+    #     print("\nINSIDE server.test()\n")
+    #     print(f"client_threads_list : {self.client_threads_list}")
+    #     print(f"REMOVING item from list...")
+    #     self.client_threads_list.remove(self.socket_connection)
+    #     self.socket_connection.close()
+    #     print(f"AFTER REMONING client_threads_list : {self.client_threads_list}")
+    #     print("\nEND OF server.test()\n")   
+    #     return
 
-    def func(self, arg):
-        print(f"Hello {arg}")
+
+if __name__ == "__main__":
+    PORT = int(sys.argv[1])
+    s1 = server(PORT)
+    s1.run_server()

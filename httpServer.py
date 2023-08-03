@@ -2,6 +2,8 @@ from config import *
 import socket
 import sys
 from _thread import *
+import os
+from utilities.breakdown import breakdown
 
 class httpMethods:
     def __init__(self):
@@ -13,31 +15,7 @@ class server:
         self.HOST = SERVER_IP
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_threads_list = list()
-        self.f_flag = 0
-
-    def run_server(self):
-        print("\nINSIDE server.run_server()\n")
-        self.server_socket.bind((self.HOST, PORT))    # server will have the IP address 127.0.0.1 and will listen on port 'PORT'
-        self.server_socket.listen(5)
-        print('http://'+ self.HOST+':'+str(PORT)+'/')
-        print("client_threads_list : ",self.client_threads_list)
-        while True:
-            self.socket_connection, client_addr = self.server_socket.accept()
-            self.client_threads_list.append(self.socket_connection) 
-
-            if len(self.client_threads_list) > MAX_CLIENT_REQUESTS:
-                print("\n\n\nMAX CONNECTION LIMIT REACHED!\n\n")
-                # send status 503 and close connection
-                self.socket_connection.close()
-                continue
-            else:
-                print(f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
-                start_new_thread(self.client_handler())
-
-        self.server_socket.close()
-        
-        print("\nEND OF server.run_server()\n")
-        return
+        self.f_flag = 0 # required for PUT method
     
     def client_handler(self):
         print("\nINSIDE server.client_handler()\n")
@@ -49,31 +27,90 @@ class server:
             else:
                 break
             try:
-                self.message = self.socket_connection.recv(SIZE)
+                message = self.socket_connection.recv(SIZE)
             except Exception as e:
                 print(f"\nError while receiving data: {e}\n")
             try:
                 self.f_flag = 0
-                self.message = self.message.decode('utf-8')
-                self.req_list = self.message.split('\r\n\r\n')
+                message = message.decode('utf-8')
+                req_list = message.split('\r\n\r\n')
             except UnicodeDecodeError:
                 self.f_flag = 1
-                self.req_list = self.message.split(b'\r\n\r\n')
-                self.req_list[0] = self.req_list[0].decode(errors='ignore')
-            print(f"message : {self.message}")
-            # write further code here
-        print("\nENDserver.client_handler()\n")
-        return
+                req_list = message.split(b'\r\n\r\n')
+                req_list[0] = req_list[0].decode(errors='ignore')
+            if(len(req_list) == 1):
+                print("Return Status code : 505")
+                break
+            elif len(req_list) == 0:
+                print("Return Status code : 505 with error in headers")
+                break
+            ent_body = req_list[1]  # not used in GET requests, but in PUT, POST, DELETE etc
+            header_list = req_list[0].split('\r\n')
+            request_line = header_list[0].split(' ')
+            print(f"\nmessage : {message}\n")
+            print(f"\nent_body : {ent_body}\n")
+            print(f"\nrequest_line : {request_line}\n")
+            print(f"\nentire req_line : {req_list}\n")
+            if len(req_list) < 2:
+                print("Return status code : 505")
+            self.method = request_line[0]
+            self.entity = request_line[1]
+            if self.entity == '/':
+                self.entity = os.getcwd()
+            elif self.entity == favicon or self.entity == 'favicon' or self.entity == 'favicon.ico':
+                self.entity = FAVICON
+            self.entity, self.query = breakdown(self.entity)
+            print(f"entity: {self.entity}, query: {self.query}")
+            if len(self.entity) > MAX_URL:
+                print("Return status code 414")
+                self.socket_connection.close()
+                break
+            version = request_line[2]
+            print(f"HTTP version: {version}")
+            try:
+                version_num = version.split('/')[1]
+                if version_num != RUNNING_VERSION:
+                    print("Return status code : 505")
+            except IndexError:
+                print("Return status code : 505")
+            request_line = header_list.pop(0)
+            self.switcher = dict()
+            for x in header_list:
+                item = x.split(': ')
+                self.switcher[item[0].strip()] = item[1].strip()
+            print(f"switcher : {self.switcher}")
+            break
+            # if self.method == 'HEAD':
+            # send socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag to the httpmethod class for further calling the appropriate methods
 
-    # def test(self):
-    #     print("\nINSIDE server.test()\n")
-    #     print(f"client_threads_list : {self.client_threads_list}")
-    #     print(f"REMOVING item from list...")
-    #     self.client_threads_list.remove(self.socket_connection)
-    #     self.socket_connection.close()
-    #     print(f"AFTER REMONING client_threads_list : {self.client_threads_list}")
-    #     print("\nEND OF server.test()\n")   
-    #     return
+        print("\nEND server.client_handler()\n")
+        return
+    
+
+    def run_server(self):
+        print("\nINSIDE server.run_server()\n")
+        self.server_socket.bind((self.HOST, PORT))    # server will have the IP address 127.0.0.1 and will listen on port 'PORT'
+        self.server_socket.listen(5)
+        print('http://'+ self.HOST+':'+str(PORT)+'/')
+        print("client_threads_list : ",self.client_threads_list)
+        while True:
+            self.socket_connection, client_addr = self.server_socket.accept()
+
+            if len(self.client_threads_list) >= MAX_CLIENT_REQUESTS:
+                print("\n\n\nMAX CONNECTION LIMIT REACHED!\n\n")
+                # send status 503 and close connection
+                self.socket_connection.close()
+                continue
+            else:
+                self.client_threads_list.append(self.socket_connection) 
+                print(f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
+                start_new_thread(self.client_handler, ())
+                # break   # at present, if the conn limit exceeds 6, the server is shut down immediately
+
+        self.server_socket.close()  # shut down the server socket
+        
+        print("\nEND OF server.run_server()\n")
+        return
 
 
 if __name__ == "__main__":

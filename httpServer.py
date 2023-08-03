@@ -5,8 +5,40 @@ from _thread import *
 import os
 from utilities.breakdown import breakdown
 
-class httpMethods:
-    def __init__(self):
+class HTTPMethods:
+    def __init__(self, socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag):
+        self.socket_connection = socket_connection
+        self.method = method
+        self.entity = entity
+        self.query = query
+        self.switcher = switcher
+        self.server_socket = server_socket
+        self.conn = client_thread
+        self.client_thread = client_thread
+        self.f_flag = f_flag
+    
+    def determine_method(self):
+        """
+        Checks which is the method requested and calls the appropriate function.
+        """
+        print("\nInside HTTPMethods.determine_method()\n")
+        print(f"self.method : {self.method}")
+        if self.method == 'GET':
+            self.handle_GET()
+        elif self.method == 'POST':
+            self.handle_POST()
+        elif self.method == 'PUT':
+            self.handle_PUT()
+        elif self.method == 'DELETE':
+            self.handle_DELETE()
+        elif self.method == 'HEAD':
+            self.handle_HEAD()
+        print("\nEND HTTPMethods.determine_method()\n")
+        
+    def handle_GET(self):
+        print("\nInside HTTPMethods.handle_GET()\n")
+    
+    def handle_HEAD(self):
         pass
 
 class server:
@@ -82,6 +114,9 @@ class server:
             break
             # if self.method == 'HEAD':
             # send socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag to the httpmethod class for further calling the appropriate methods
+        
+        http_obj = HTTPMethods(self.socket_connection, self.method, self.entity, self.query, self.switcher, self.server_socket, self.conn, self.client_threads_list, SERVER_IP, PORT, self.f_flag)
+        http_obj.determine_method()
 
         print("\nEND server.client_handler()\n")
         return
@@ -94,18 +129,17 @@ class server:
         print('http://'+ self.HOST+':'+str(PORT)+'/')
         print("client_threads_list : ",self.client_threads_list)
         while True:
-            self.socket_connection, client_addr = self.server_socket.accept()
-
-            if len(self.client_threads_list) >= MAX_CLIENT_REQUESTS:
-                print("\n\n\nMAX CONNECTION LIMIT REACHED!\n\n")
-                # send status 503 and close connection
-                self.socket_connection.close()
-                continue
-            else:
+            if len(self.client_threads_list) < MAX_CLIENT_REQUESTS:
+                self.socket_connection, client_addr = self.server_socket.accept()
                 self.client_threads_list.append(self.socket_connection) 
                 print(f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
                 start_new_thread(self.client_handler, ())
                 # break   # at present, if the conn limit exceeds 6, the server is shut down immediately
+            else:
+                print("\n\n\nMAX CONNECTION LIMIT REACHED!\n\n")
+                # send status 503 and close connection
+                self.socket_connection.close()
+                break
 
         self.server_socket.close()  # shut down the server socket
         

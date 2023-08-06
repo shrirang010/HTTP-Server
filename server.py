@@ -3,7 +3,6 @@ from _thread import *
 import signal
 from urllib.parse import parse_qs
 import os
-import csv
 import datetime
 
 
@@ -30,16 +29,14 @@ def handle_delete_request(client,clientport,resource):
     #check if resource is present
     #if resource is /database.txt/123 where 123 is id
     #extract id from resource
-
     #delete resource
-    print(resource)
+    ip='127.0.0.1'
     index=resource.find('database.txt/')
     if(index == -1):
         #call status code error
         print("Not found")
         return
     id=resource[index+13:]
-    print(id)
     with open("./database.txt",'r') as file:
         lines=file.readlines()
     count=len(lines)
@@ -50,14 +47,19 @@ def handle_delete_request(client,clientport,resource):
                 lines.remove(line)
                 break
     if(len(lines) == count):
-        print("Not found")
+        print("Resource Not found")
         #call status code error
         exit        
     else:
         with open("database.txt",'w') as file:
             file.writelines(lines)
+        print("Resource Deleted successfully!") 
     text='\r\nHTTP/1.1 204 No Content'
+    text += '\r\nConnection: keep-alive'
+    text += '\r\nContent-Language: en-US'
+    text += '\r\nServer: ' + ip
     client.send(text.encode())
+
 def handle_get_request(client, port,entity,serverport):
     isItFile = os.path.isfile(entity)
     isItDir  = os.path.isdir(entity)
@@ -68,7 +70,7 @@ def handle_get_request(client, port,entity,serverport):
         textdata += '\r\n<html lang="en">'
         textdata += '\r\n<head>'
         textdata += '\r\n<meta charset="utf-8">'
-        textdata += '\r\n<title>A simple webpage</title>'
+        textdata += '\r\n<title>STUDY MATERIAL</title>'
         textdata += '\r\n</head>'
         textdata += '\r\n<body>'
         textdata += '\r\n<h1>Current Directory </h1>'
@@ -86,10 +88,11 @@ def handle_get_request(client, port,entity,serverport):
         textdata+="\r\n</ul>"
         textdata+="\r\n<br>"
         textdata+="\r\n<h2>Post Request Form</h2>"
-        textdata+=read_file_contents("./form.html")
+        textdata+=read_file_contents("./postform.html")
         textdata += '\r\n</body>'
         textdata += '\r\n</html>'
         dir_data_length=len(textdata)   #Length of data to be sent if a directory
+    #Preparing http get response
     text = '\r\nHTTP/1.1 200 OK'
     text += '\r\nConnection: keep-alive'
     text += '\r\nContent-Language: en-US'
@@ -123,8 +126,8 @@ def handle_get_request(client, port,entity,serverport):
         return
     else:
         pass
-    return
-    
+    return    
+
 def handle_post_request(client,clientport,entity,headers,post_data):
         index=headers.find('Content-Type:')
         content_type =headers[index+14 : index+14+33]
@@ -146,18 +149,19 @@ def handle_post_request(client,clientport,entity,headers,post_data):
         f =open("database.txt","+a")
         f.write("\n")
         f.write(Id + "  "+ Name + " " + Email)
+        responsedata=read_file_contents("./postresponse.html")
         text = 'HTTP/1.1 200 OK'
         ip = '127.0.0.1'
-        text += '\r\n Connection: keep-alive'
-        text += '\r\n Content-Language: en-US'
+        text += '\r\nConnection: keep-alive'
+        text += '\r\nContent-Language: en-US'
+        text+='\r\nContent-length: '+str(len(responsedata))
         text += '\r\nContent-type: text/html; charset=utf-8'
         text += '\r\n Server: ' + ip
         text+="\r\n\r\n"
-        text+=read_file_contents("./postresponse.html")
+        text+=responsedata
         client.send(text.encode())
         return
     
-
 def client_request_handler(server, client, port,serverport):
     try:
         while True:
@@ -201,7 +205,7 @@ def client_request_handler(server, client, port,serverport):
 
 def main():
     HOST = '127.0.0.1'
-    PORT = 8132
+    PORT = 8135
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind((HOST, PORT))
     server.listen(5)

@@ -16,7 +16,8 @@ class HTTPMethods:
         self.conn = client_thread
         self.client_thread = client_thread
         self.f_flag = f_flag
-    
+
+
     def determine_method(self):
         """
         Checks which is the method requested and calls the appropriate function.
@@ -37,6 +38,8 @@ class HTTPMethods:
         
     def handle_GET(self):
         print("\nInside HTTPMethods.handle_GET()\n")
+        print("\nSending dummy status code from handle_GET() to status() method!\n")
+        server(PORT).status(self.socket_connection, 403)
     
     def handle_HEAD(self):
         pass
@@ -48,6 +51,7 @@ class server:
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_threads_list = list()
         self.f_flag = 0 # required for PUT method
+        self.scode = 0  # status code initialization
     
     def client_handler(self):
         print("\nINSIDE server.client_handler()\n")
@@ -71,7 +75,7 @@ class server:
                 req_list = message.split(b'\r\n\r\n')
                 req_list[0] = req_list[0].decode(errors='ignore')
             if(len(req_list) == 1):
-                print("Return Status code : 505")
+                self.status(505)
                 break
             elif len(req_list) == 0:
                 print("Return Status code : 505 with error in headers")
@@ -121,6 +125,48 @@ class server:
         print("\nEND server.client_handler()\n")
         return
     
+
+    def status(self, socket_connection, code):
+        """
+        Responds to the client when server is busy
+        """
+        print("\nINSIDE server.status()\n")
+        print("Received STATUS : ", code)
+        show_response = ''
+        self.scode = code
+        if(int(code) == 505):
+            print("Return Status code : 505")
+            show_response += 'HTTP/1.1 505 HTTP version not supported'
+        elif(int(code) == 415):
+            print("Return Status code : 415")
+            show_response += 'HTTP/1.1 415 Unsupported Media Type'
+        elif(int(code) == 403):
+            print("Return Status code : 403")
+            show_response += 'HTTP/1.1 403 Forbidden'
+        elif(int(code) == 404):
+            print("Return Status code : 404")
+            show_response += 'HTTP/1.1 404 Not Found'
+        elif (int(code) == 414):
+            print("Return Status code : 414")
+            show_response += 'HTTP/1.1 414 Request-URI Too Long'
+        elif(int(code) == 500):
+            print("Return Status code : 500")
+            show_response += 'HTTP/1.1 500 Internal Server Error'
+        elif(int(code) == 503):
+            print("Return Status code : 503")
+            show_response += 'HTTP/1.1 503 Service Unavailable'
+        show_response += '\r\nServer: ' + self.HOST + ':' + str(PORT)
+        show_response += '\r\n' + "DATE!!!"
+        show_response += '\r\n\r\n'
+        encoded = show_response.encode()
+        socket_connection.send(encoded)
+        try:
+            self.client_threads_list.remove(socket_connection)
+            socket_connection.close()
+        except:
+            pass
+        print("\nEND server.status()\n")
+        return
 
     def run_server(self):
         print("\nINSIDE server.run_server()\n")

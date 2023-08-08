@@ -11,6 +11,7 @@ def breakdown(entity):
     query = parse_qs(u.query)
     return (entity, query)
 
+
 def date():
     #  Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
     now = datetime.now()
@@ -18,3 +19,11 @@ def date():
     datenow += "GMT"
     conversation = 'Date: ' + datenow
     return conversation
+
+
+def read_file_contents(file_path):
+    content = ""
+    with open(file_path, 'r') as file:
+        for line in file:
+            content +="\r\n"+ line.strip()  # Remove leading/trailing whitespace if desired
+    return content

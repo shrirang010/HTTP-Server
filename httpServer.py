@@ -3,10 +3,11 @@ import socket
 import sys
 from _thread import *
 import os
-from utilities.breakdown import breakdown, date
+from utilities.methods import breakdown, date, read_file_contents
+
 
 class HTTPMethods:
-    def __init__(self, socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag):
+    def __init__(self, socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, PORT, f_flag):
         self.socket_connection = socket_connection
         self.method = method
         self.entity = entity
@@ -16,6 +17,7 @@ class HTTPMethods:
         self.conn = client_thread
         self.client_thread = client_thread
         self.f_flag = f_flag
+        self.PORT = PORT
 
 
     def determine_method(self):
@@ -37,9 +39,72 @@ class HTTPMethods:
         print("\nEND HTTPMethods.determine_method()\n")
         
     def handle_GET(self):
-        print("\nInside HTTPMethods.handle_GET()\n")
-        print("\nSending dummy status code from handle_GET() to status() method!\n")
-        server(PORT).status(self.socket_connection, 403)
+        isItFile = os.path.isfile(self.entity)
+        isItDir  = os.path.isdir(self.entity)
+        textdata=''
+        if(isItDir):
+            textdata += '\r\n<!DOCTYPE html>'
+            textdata += '\r\n<html lang="en">'
+            textdata += '\r\n<head>'
+            textdata += '\r\n<meta charset="utf-8">'
+            textdata += '\r\n<title>STUDY MATERIAL</title>'
+            textdata += '\r\n</head>'
+            textdata += '\r\n<body>'
+            textdata += '\r\n<h1>Current Directory </h1>'
+            dir_list1 = os.listdir(self.entity)
+            textdata+="\r\n<ul>"
+            for line in dir_list1:
+                if self.entity == '/':
+                    # link = 'http://' + ip + ':' + str(serverport) + entity + '/'+ line
+                    l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
+                    text += l
+                else:
+                    link = 'http://' + SERVER_IP + ':' + str(self.PORT) + self.entity + '/'+ line
+                    l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
+                    textdata += l
+            textdata+="\r\n</ul>"
+            textdata+="\r\n<br>"
+            textdata+="\r\n<h2>Post Request Form</h2>"
+            textdata+=read_file_contents(ROOT + "/postform.html")
+            textdata += '\r\n</body>'
+            textdata += '\r\n</html>'
+            dir_data_length=len(textdata)   #Length of data to be sent if a directory
+        #Preparing http get response
+        text = '\r\nHTTP/1.1 200 OK'
+        text += '\r\nConnection: keep-alive'
+        text += '\r\nContent-Language: en-US'
+        text += '\r\nServer: ' + SERVER_IP
+        text += '\r\nDate : ' + date()
+        text += '\r\nStrict-Transport-Security: max-age=63072000'
+        text += '\r\nX-Content-Type-Options: nosniff'
+        text += '\r\nX-Frame-Options: DENY'
+        text += '\r\nX-XSS-Protection: 1; mode=block'
+        # Adding data
+        if(isItDir):
+            text += '\r\nContent-type: text/html; charset=utf-8'
+            text+='\r\nContent-length: '+str(dir_data_length)
+            text += '\r\n\r\n'
+            text+=textdata
+            encoded=text.encode()
+            self.socket_connection.send(encoded)
+            print("Response Sent...",self.PORT)
+        elif(isItFile):
+            size = os.path.getsize(self.entity)
+            text+='\r\n\Content-type: text/plain'
+            text+='\r\nContent-length: '+str(size)
+            text += '\r\n\r\n'
+            try:            
+                f = open(self.entity, "rb")
+                encoded=text.encode()
+                self.socket_connection.send(encoded)
+                self.socket_connection.sendfile(f)
+                print("Response Sent... ", self.PORT)
+            except:
+                pass
+            return
+        else:
+            pass
+        return  
     
     def handle_HEAD(self):
         pass
@@ -75,7 +140,7 @@ class server:
                 req_list = message.split(b'\r\n\r\n')
                 req_list[0] = req_list[0].decode(errors='ignore')
             if(len(req_list) == 1):
-                self.status(505)
+                self.status(self.socket_connection, 505)
                 break
             elif len(req_list) == 0:
                 print("Return Status code : 505 with error in headers")
@@ -119,7 +184,7 @@ class server:
             # if self.method == 'HEAD':
             # send socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag to the httpmethod class for further calling the appropriate methods
         
-        http_obj = HTTPMethods(self.socket_connection, self.method, self.entity, self.query, self.switcher, self.server_socket, self.conn, self.client_threads_list, SERVER_IP, PORT, self.f_flag)
+        http_obj = HTTPMethods(self.socket_connection, self.method, self.entity, self.query, self.switcher, self.server_socket, self.conn, self.client_threads_list, PORT, self.f_flag)
         http_obj.determine_method()
 
         print("\nEND server.client_handler()\n")
@@ -156,7 +221,7 @@ class server:
             print("Return Status code : 503")
             show_response += 'HTTP/1.1 503 Service Unavailable'
         show_response += '\r\nServer: ' + self.HOST + ':' + str(PORT)
-        show_response += '\r\n' + "DATE!!!"
+        show_response += '\r\n' + date()
         show_response += '\r\n\r\n'
         encoded = show_response.encode()
         socket_connection.send(encoded)
@@ -184,6 +249,7 @@ class server:
             else:
                 print("\n\n\nMAX CONNECTION LIMIT REACHED!\n\n")
                 # send status 503 and close connection
+                self.status(self.socket_connection, 503)
                 self.socket_connection.close()
                 break
 

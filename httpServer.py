@@ -147,8 +147,42 @@ class HTTPMethods:
         return
 
 
-    def handle_HEAD(self):
-        pass
+    def handle_DELETE(self):
+        #if present then delete and send status code 204
+    #check if resource is present
+    #if resource is /database.txt/123 where 123 is id
+    #extract id from resource
+    #delete resource
+        resource = self.entity
+        index=resource.find('database.txt/')
+        if(index == -1):
+            #call status code error
+            print("Resource Not found")
+            return
+        id=resource[index+13:]
+        with open("./database.txt",'r') as file:
+            lines=file.readlines()
+        count=len(lines)
+        with open("database.txt",'r') as file:    
+            for line in file:
+                row=line.split(' ')
+                if(row[0] == id):
+                    lines.remove(line)
+                    break
+        if(len(lines) == count):
+            print("Resource Not found")
+            #call status code error
+            exit        
+        else:
+            with open("database.txt",'w') as file:
+                file.writelines(lines)
+            print("Resource Deleted successfully!") 
+        text='\r\nHTTP/1.1 204 No Content'
+        text += '\r\nConnection: keep-alive'
+        text += '\r\nContent-Language: en-US'
+        text += '\r\nServer: ' + SERVER_IP
+        self.socket_connection.send(text.encode())
+
 
 class server:
     def __init__(self, PORT):

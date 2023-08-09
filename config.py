@@ -1,7 +1,7 @@
 import os
 
 SERVER_IP = '127.0.0.1'
-MAX_CLIENT_REQUESTS = 6
+MAX_CLIENT_REQUESTS = 10
 SIZE = 8192
 ROOT = os.getcwd()
 favicon = "/images/favicon.ico"

@@ -20,16 +20,18 @@ class HTTPMethods:
         self.PORT = PORT
 
 
-    def determine_method(self):
+    def determine_method(self, req_list):
         """
         Checks which is the method requested and calls the appropriate function.
         """
         print("\nInside HTTPMethods.determine_method()\n")
+        headers = req_list[0]
+        post_data = req_list[1]
         print(f"self.method : {self.method}")
         if self.method == 'GET':
             self.handle_GET()
         elif self.method == 'POST':
-            self.handle_POST()
+            self.handle_POST(headers, post_data)
         elif self.method == 'PUT':
             self.handle_PUT()
         elif self.method == 'DELETE':
@@ -37,7 +39,8 @@ class HTTPMethods:
         elif self.method == 'HEAD':
             self.handle_HEAD()
         print("\nEND HTTPMethods.determine_method()\n")
-        
+
+
     def handle_GET(self):
         isItFile = os.path.isfile(self.entity)
         isItDir  = os.path.isdir(self.entity)
@@ -104,8 +107,46 @@ class HTTPMethods:
             return
         else:
             pass
-        return  
-    
+        return
+
+
+    def handle_POST(self, headers, post_data):
+        print("\nInside HTTPMethods.handle_POST()\n")
+        index=headers.find('Content-Type:')
+        content_type =headers[index+14 : index+14+33]
+        if(content_type != 'application/x-www-form-urlencoded'):
+            #some status code 
+            pass
+        #Process & Extract Post method data
+        print(post_data) 
+        index1= post_data.find("name=")
+        index2= post_data.find("&email")
+        Name =post_data[index1+5:index2]
+        index3=post_data.find("mis=")
+        index4=post_data.find("&name")
+        Id=post_data[index3+4 :index4]
+        index1=post_data.find("email=")
+        Email=post_data[index1+6:]
+
+        #Write the processed data to database.txt
+        f =open("database.txt","+a")
+        f.write("\n")
+        f.write(Id + "  "+ Name + " " + Email)
+        responsedata=read_file_contents("./postresponse.html")
+        text = 'HTTP/1.1 200 OK'
+        ip = '127.0.0.1'
+        text += '\r\nConnection: keep-alive'
+        text += '\r\nContent-Language: en-US'
+        text+='\r\nContent-length: '+str(len(responsedata))
+        text += '\r\nContent-type: text/html; charset=utf-8'
+        text += '\r\n Server: ' + ip
+        text+="\r\n\r\n"
+        text+=responsedata
+        self.socket_connection.send(text.encode())
+        print("\nEND HTTPMethods.handle_POST()\n")
+        return
+
+
     def handle_HEAD(self):
         pass
 
@@ -185,7 +226,7 @@ class server:
             # send socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag to the httpmethod class for further calling the appropriate methods
         
         http_obj = HTTPMethods(self.socket_connection, self.method, self.entity, self.query, self.switcher, self.server_socket, self.conn, self.client_threads_list, PORT, self.f_flag)
-        http_obj.determine_method()
+        http_obj.determine_method(req_list)
 
         print("\nEND server.client_handler()\n")
         return
@@ -232,6 +273,7 @@ class server:
             pass
         print("\nEND server.status()\n")
         return
+
 
     def run_server(self):
         print("\nINSIDE server.run_server()\n")

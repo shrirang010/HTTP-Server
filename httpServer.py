@@ -58,7 +58,6 @@ class HTTPMethods:
             textdata+="\r\n<ul>"
             for line in dir_list1:
                 if self.entity == '/':
-                    # link = 'http://' + ip + ':' + str(serverport) + entity + '/'+ line
                     l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
                     text += l
                 else:
@@ -117,9 +116,6 @@ class HTTPMethods:
         textdata = ''
 
         if isItDir:
-            # ... (Directory handling code, generating textdata)
-
-        # Preparing http response headers
             text = '\r\nHTTP/1.1 200 OK'
             text += '\r\nConnection: keep-alive'
             text += '\r\nContent-Language: en-US'
@@ -163,8 +159,7 @@ class HTTPMethods:
         index=headers.find('Content-Type:')
         content_type =headers[index+14 : index+14+33]
         if(content_type != 'application/x-www-form-urlencoded'):
-            #some status code 
-            pass
+            server(self.PORT).status(self.socket_connection, 415)
         #Process & Extract Post method data
         print(data) 
         index1= data.find("name=")
@@ -180,14 +175,13 @@ class HTTPMethods:
         f =open("database.txt","+a")
         f.write("\n")
         f.write(Id + "  "+ Name + " " + Email)
-        responsedata=read_file_contents("./postresponse.html")
+        responsedata=read_file_contents(ROOT + "/postresponse.html")
         text = 'HTTP/1.1 200 OK'
-        ip = '127.0.0.1'
         text += '\r\nConnection: keep-alive'
         text += '\r\nContent-Language: en-US'
         text+='\r\nContent-length: '+str(len(responsedata))
         text += '\r\nContent-type: text/html; charset=utf-8'
-        text += '\r\n Server: ' + ip
+        text += '\r\n Server: ' + SERVER_IP
         text+="\r\n\r\n"
         text+=responsedata
         self.socket_connection.send(text.encode())
@@ -224,14 +218,13 @@ class HTTPMethods:
                     f.write(line)
             f.truncate()
 
-        responsedata = read_file_contents("./postresponse.html")
+        responsedata = read_file_contents(ROOT + "/postresponse.html")
         text = 'HTTP/1.1 200 OK'
-        ip = '127.0.0.1'
         text += '\r\nConnection: keep-alive'
         text += '\r\nContent-Language: en-US'
         text += '\r\nContent-length: ' + str(len(responsedata))
         text += '\r\nContent-type: text/html; charset=utf-8'
-        text += '\r\nServer: ' + ip
+        text += '\r\nServer: ' + SERVER_IP
         text += "\r\n\r\n"
         text += responsedata
         self.socket_connection.send(text.encode())
@@ -264,7 +257,7 @@ class HTTPMethods:
                     break
         if(len(lines) == count):
             print("Resource Not found")
-            #call status code error
+            server(self.PORT).status(self.socket_connection, 404)
             exit        
         else:
             with open("database.txt",'w') as file:
@@ -312,7 +305,7 @@ class server:
                 self.status(self.socket_connection, 505)
                 break
             elif len(req_list) == 0:
-                print("Return Status code : 505 with error in headers")
+                self.status(self.socket_connection, 505)
                 break
             ent_body = req_list[1]  # not used in GET requests, but in PUT, POST, DELETE etc
             header_list = req_list[0].split('\r\n')
@@ -322,7 +315,7 @@ class server:
             print(f"\nrequest_line : {request_line}\n")
             print(f"\nentire req_line : {req_list}\n")
             if len(req_list) < 2:
-                print("Return status code : 505")
+                self.status(self.socket_connection, 505)
             self.method = request_line[0]
             self.entity = request_line[1]
             if self.entity == '/':
@@ -332,7 +325,7 @@ class server:
             self.entity, self.query = breakdown(self.entity)
             print(f"entity: {self.entity}, query: {self.query}")
             if len(self.entity) > MAX_URL:
-                print("Return status code 414")
+                self.status(self.socket_connection, 414)
                 self.socket_connection.close()
                 break
             version = request_line[2]
@@ -340,9 +333,9 @@ class server:
             try:
                 version_num = version.split('/')[1]
                 if version_num != RUNNING_VERSION:
-                    print("Return status code : 505")
+                    self.status(self.socket_connection, 505)
             except IndexError:
-                print("Return status code : 505")
+                self.status(self.socket_connection, 505)
             request_line = header_list.pop(0)
             self.switcher = dict()
             for x in header_list:

@@ -26,14 +26,14 @@ class HTTPMethods:
         """
         print("\nInside HTTPMethods.determine_method()\n")
         headers = req_list[0]
-        post_data = req_list[1]
+        data = req_list[1]
         print(f"self.method : {self.method}")
         if self.method == 'GET':
             self.handle_GET()
         elif self.method == 'POST':
-            self.handle_POST(headers, post_data)
+            self.handle_POST(headers, data)
         elif self.method == 'PUT':
-            self.handle_PUT()
+            self.handle_PUT(headers, data)
         elif self.method == 'DELETE':
             self.handle_DELETE()
         elif self.method == 'HEAD':
@@ -108,9 +108,57 @@ class HTTPMethods:
         else:
             pass
         return
+    
+
+    
+    def handle_HEAD(self):
+        isItFile = os.path.isfile(self.entity)
+        isItDir = os.path.isdir(self.entity)
+        textdata = ''
+
+        if isItDir:
+            # ... (Directory handling code, generating textdata)
+
+        # Preparing http response headers
+            text = '\r\nHTTP/1.1 200 OK'
+            text += '\r\nConnection: keep-alive'
+            text += '\r\nContent-Language: en-US'
+            text += '\r\nServer: ' + SERVER_IP
+            text += '\r\nDate: ' + date()
+            text += '\r\nStrict-Transport-Security: max-age=63072000'
+            text += '\r\nX-Content-Type-Options: nosniff'
+            text += '\r\nX-Frame-Options: DENY'
+            text += '\r\nX-XSS-Protection: 1; mode=block'
+            text += '\r\nContent-type: text/html; charset=utf-8'
+            text += '\r\nContent-length: ' + str(len(textdata))
+            text += '\r\n\r\n'
+            if self.method == 'HEAD':
+                encoded = text.encode()
+                self.socket_connection.send(encoded)
+            # else:
+            #     text += textdata
+            #     encoded = text.encode()
+            #     self.socket_connection.send(encoded)
+            print("Response Sent...", self.PORT)
+        elif isItFile:
+            size = os.path.getsize(self.entity)
+            text += '\r\nContent-type: text/plain'
+            text += '\r\nContent-length: ' + str(size)
+            text += '\r\n\r\n'
+            try:
+                # f = open(self.entity, "rb")
+                encoded = text.encode()
+                self.socket_connection.send(encoded)
+                print("Response Sent... ", self.PORT)
+            except:
+                pass
+        else:
+            server(self.PORT).status(self.socket_connection, 503)
+        return
 
 
-    def handle_POST(self, headers, post_data):
+
+    def handle_POST(self, headers, data):
         print("\nInside HTTPMethods.handle_POST()\n")
         index=headers.find('Content-Type:')
         content_type =headers[index+14 : index+14+33]
@@ -118,15 +166,15 @@ class HTTPMethods:
             #some status code 
             pass
         #Process & Extract Post method data
-        print(post_data) 
-        index1= post_data.find("name=")
-        index2= post_data.find("&email")
-        Name =post_data[index1+5:index2]
-        index3=post_data.find("mis=")
-        index4=post_data.find("&name")
-        Id=post_data[index3+4 :index4]
-        index1=post_data.find("email=")
-        Email=post_data[index1+6:]
+        print(data) 
+        index1= data.find("name=")
+        index2= data.find("&email")
+        Name =data[index1+5:index2]
+        index3=data.find("mis=")
+        index4=data.find("&name")
+        Id=data[index3+4 :index4]
+        index1=data.find("email=")
+        Email=data[index1+6:]
 
         #Write the processed data to database.txt
         f =open("database.txt","+a")
@@ -145,6 +193,51 @@ class HTTPMethods:
         self.socket_connection.send(text.encode())
         print("\nEND HTTPMethods.handle_POST()\n")
         return
+    
+
+    def handle_PUT(self, headers, data):
+        print("\nInside HTTPMethods.handle_PUT()\n")
+        
+        # Assuming the ID is included in the URL or headers
+        id_index = headers.find('Id')
+        if id_index == -1:
+            # Handle error: ID not provided
+            pass
+        Id = headers[id_index + 3:].strip()
+
+        # Process & Extract PUT data
+        index1 = data.find("name=")
+        index2 = data.find("&email")
+        Name = data[index1 + 5 : index2]
+        
+        index3 = data.find("email=")
+        Email = data[index3 + 6 :]
+
+        # Update the processed data in database.txt
+        with open("database.txt", "r+") as f:
+            lines = f.readlines()
+            f.seek(0)
+            for line in lines:
+                if line.startswith(Id):
+                    f.write(Id + "  " + Name + " " + Email + "\n")
+                else:
+                    f.write(line)
+            f.truncate()
+
+        responsedata = read_file_contents("./postresponse.html")
+        text = 'HTTP/1.1 200 OK'
+        ip = '127.0.0.1'
+        text += '\r\nConnection: keep-alive'
+        text += '\r\nContent-Language: en-US'
+        text += '\r\nContent-length: ' + str(len(responsedata))
+        text += '\r\nContent-type: text/html; charset=utf-8'
+        text += '\r\nServer: ' + ip
+        text += "\r\n\r\n"
+        text += responsedata
+        self.socket_connection.send(text.encode())
+        print("\nEND HTTPMethods.handle_PUT()\n")
+        return
+
 
 
     def handle_DELETE(self):
@@ -156,7 +249,7 @@ class HTTPMethods:
         resource = self.entity
         index=resource.find('database.txt/')
         if(index == -1):
-            #call status code error
+            server(self.PORT).status(self.socket_connection, 404)
             print("Resource Not found")
             return
         id=resource[index+13:]
@@ -182,6 +275,7 @@ class HTTPMethods:
         text += '\r\nContent-Language: en-US'
         text += '\r\nServer: ' + SERVER_IP
         self.socket_connection.send(text.encode())
+
 
 
 class server:
@@ -285,7 +379,7 @@ class server:
             show_response += 'HTTP/1.1 403 Forbidden'
         elif(int(code) == 404):
             print("Return Status code : 404")
-            show_response += 'HTTP/1.1 404 Not Found'
+            show_response += 'HTTP/1.1 404 Resource Not Found'
         elif (int(code) == 414):
             print("Return Status code : 414")
             show_response += 'HTTP/1.1 414 Request-URI Too Long'

@@ -1,2 +1,0 @@
-- https://towardsdatascience.com/common-mistakes-when-dealing-with-multiple-python-files-b4f4dc4d5643
-- https://docs.python.org/3.9/library/socket.html

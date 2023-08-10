@@ -7,14 +7,13 @@ from utilities.methods import breakdown, date, read_file_contents
 
 
 class HTTPMethods:
-    def __init__(self, socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, PORT, f_flag):
+    def __init__(self, socket_connection, method, entity, query, switcher, server_socket, client_thread, PORT, f_flag):
         self.socket_connection = socket_connection
         self.method = method
         self.entity = entity
         self.query = query
         self.switcher = switcher
         self.server_socket = server_socket
-        self.conn = client_thread
         self.client_thread = client_thread
         self.f_flag = f_flag
         self.PORT = PORT
@@ -43,9 +42,9 @@ class HTTPMethods:
 
     def handle_GET(self):
         isItFile = os.path.isfile(self.entity)
-        isItDir  = os.path.isdir(self.entity)
-        textdata=''
-        if(isItDir):
+        isItDir = os.path.isdir(self.entity)
+        textdata = ''
+        if (isItDir):
             textdata += '\r\n<!DOCTYPE html>'
             textdata += '\r\n<html lang="en">'
             textdata += '\r\n<head>'
@@ -55,23 +54,25 @@ class HTTPMethods:
             textdata += '\r\n<body>'
             textdata += '\r\n<h1>Current Directory </h1>'
             dir_list1 = os.listdir(self.entity)
-            textdata+="\r\n<ul>"
+            textdata += "\r\n<ul>"
             for line in dir_list1:
                 if self.entity == '/':
                     l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
                     text += l
                 else:
-                    link = 'http://' + SERVER_IP + ':' + str(self.PORT) + self.entity + '/'+ line
+                    link = 'http://' + SERVER_IP + ':' + \
+                        str(self.PORT) + self.entity + '/' + line
                     l = '\r\n<li><a href ="'+link+'">'+line+'</a></li>'
                     textdata += l
-            textdata+="\r\n</ul>"
-            textdata+="\r\n<br>"
-            textdata+="\r\n<h2>Post Request Form</h2>"
-            textdata+=read_file_contents(ROOT + "/postform.html")
+            textdata += "\r\n</ul>"
+            textdata += "\r\n<br>"
+            textdata += "\r\n<h2>Post Request Form</h2>"
+            textdata += read_file_contents(ROOT + "/postform.html")
             textdata += '\r\n</body>'
             textdata += '\r\n</html>'
-            dir_data_length=len(textdata)   #Length of data to be sent if a directory
-        #Preparing http get response
+            # Length of data to be sent if a directory
+            dir_data_length = len(textdata)
+        # Preparing http get response
         text = '\r\nHTTP/1.1 200 OK'
         text += '\r\nConnection: keep-alive'
         text += '\r\nContent-Language: en-US'
@@ -82,34 +83,30 @@ class HTTPMethods:
         text += '\r\nX-Frame-Options: DENY'
         text += '\r\nX-XSS-Protection: 1; mode=block'
         # Adding data
-        if(isItDir):
+        if (isItDir):
             text += '\r\nContent-type: text/html; charset=utf-8'
-            text+='\r\nContent-length: '+str(dir_data_length)
+            text += '\r\nContent-length: '+str(dir_data_length)
             text += '\r\n\r\n'
-            text+=textdata
-            encoded=text.encode()
+            text += textdata
+            encoded = text.encode()
             self.socket_connection.send(encoded)
-            print("Response Sent...",self.PORT)
-        elif(isItFile):
+            print("Response Sent...", self.PORT)
+        elif (isItFile):
             size = os.path.getsize(self.entity)
-            text+='\r\n\Content-type: text/plain'
-            text+='\r\nContent-length: '+str(size)
+            text += '\r\n\Content-type: text/plain'
+            text += '\r\nContent-length: '+str(size)
             text += '\r\n\r\n'
-            try:            
+            try:
                 f = open(self.entity, "rb")
-                encoded=text.encode()
+                encoded = text.encode()
                 self.socket_connection.send(encoded)
                 self.socket_connection.sendfile(f)
                 print("Response Sent... ", self.PORT)
             except:
                 pass
-            return
-        else:
-            pass
         return
-    
 
-    
+
     def handle_HEAD(self):
         isItFile = os.path.isfile(self.entity)
         isItDir = os.path.isdir(self.entity)
@@ -153,45 +150,44 @@ class HTTPMethods:
         return
 
 
-
     def handle_POST(self, headers, data):
         print("\nInside HTTPMethods.handle_POST()\n")
-        index=headers.find('Content-Type:')
-        content_type =headers[index+14 : index+14+33]
-        if(content_type != 'application/x-www-form-urlencoded'):
+        index = headers.find('Content-Type:')
+        content_type = headers[index+14: index+14+33]
+        if (content_type != 'application/x-www-form-urlencoded'):
             server(self.PORT).status(self.socket_connection, 415)
-        #Process & Extract Post method data
-        print(data) 
-        index1= data.find("name=")
-        index2= data.find("&email")
-        Name =data[index1+5:index2]
-        index3=data.find("mis=")
-        index4=data.find("&name")
-        Id=data[index3+4 :index4]
-        index1=data.find("email=")
-        Email=data[index1+6:]
+        # Process & Extract Post method data
+        print(data)
+        index1 = data.find("name=")
+        index2 = data.find("&email")
+        Name = data[index1+5:index2]
+        index3 = data.find("mis=")
+        index4 = data.find("&name")
+        Id = data[index3+4:index4]
+        index1 = data.find("email=")
+        Email = data[index1+6:]
 
-        #Write the processed data to database.txt
-        f =open("database.txt","+a")
+        # Write the processed data to database.txt
+        f = open("database.txt", "+a")
         f.write("\n")
-        f.write(Id + "  "+ Name + " " + Email)
-        responsedata=read_file_contents(ROOT + "/postresponse.html")
+        f.write(Id + "  " + Name + " " + Email)
+        responsedata = read_file_contents(ROOT + "/postresponse.html")
         text = 'HTTP/1.1 200 OK'
         text += '\r\nConnection: keep-alive'
         text += '\r\nContent-Language: en-US'
-        text+='\r\nContent-length: '+str(len(responsedata))
+        text += '\r\nContent-length: '+str(len(responsedata))
         text += '\r\nContent-type: text/html; charset=utf-8'
         text += '\r\n Server: ' + SERVER_IP
-        text+="\r\n\r\n"
-        text+=responsedata
+        text += "\r\n\r\n"
+        text += responsedata
         self.socket_connection.send(text.encode())
         print("\nEND HTTPMethods.handle_POST()\n")
         return
-    
+
 
     def handle_PUT(self, headers, data):
         print("\nInside HTTPMethods.handle_PUT()\n")
-        
+
         # Assuming the ID is included in the URL or headers
         id_index = headers.find('Id')
         if id_index == -1:
@@ -202,10 +198,10 @@ class HTTPMethods:
         # Process & Extract PUT data
         index1 = data.find("name=")
         index2 = data.find("&email")
-        Name = data[index1 + 5 : index2]
-        
+        Name = data[index1 + 5: index2]
+
         index3 = data.find("email=")
-        Email = data[index3 + 6 :]
+        Email = data[index3 + 6:]
 
         # Update the processed data in database.txt
         with open("database.txt", "r+") as f:
@@ -232,43 +228,41 @@ class HTTPMethods:
         return
 
 
-
     def handle_DELETE(self):
-        #if present then delete and send status code 204
-    #check if resource is present
-    #if resource is /database.txt/123 where 123 is id
-    #extract id from resource
-    #delete resource
+        # if present then delete and send status code 204
+        # check if resource is present
+        # if resource is /database.txt/123 where 123 is id
+        # extract id from resource
+        # delete resource
         resource = self.entity
-        index=resource.find('database.txt/')
-        if(index == -1):
+        index = resource.find('database.txt/')
+        if (index == -1):
             server(self.PORT).status(self.socket_connection, 404)
             print("Resource Not found")
             return
-        id=resource[index+13:]
-        with open("./database.txt",'r') as file:
-            lines=file.readlines()
-        count=len(lines)
-        with open("database.txt",'r') as file:    
+        id = resource[index+13:]
+        with open("./database.txt", 'r') as file:
+            lines = file.readlines()
+        count = len(lines)
+        with open("database.txt", 'r') as file:
             for line in file:
-                row=line.split(' ')
-                if(row[0] == id):
+                row = line.split(' ')
+                if (row[0] == id):
                     lines.remove(line)
                     break
-        if(len(lines) == count):
+        if (len(lines) == count):
             print("Resource Not found")
             server(self.PORT).status(self.socket_connection, 404)
-            exit        
+            exit
         else:
-            with open("database.txt",'w') as file:
+            with open("database.txt", 'w') as file:
                 file.writelines(lines)
-            print("Resource Deleted successfully!") 
-        text='\r\nHTTP/1.1 204 No Content'
+            print("Resource Deleted successfully!")
+        text = '\r\nHTTP/1.1 204 No Content'
         text += '\r\nConnection: keep-alive'
         text += '\r\nContent-Language: en-US'
         text += '\r\nServer: ' + SERVER_IP
         self.socket_connection.send(text.encode())
-
 
 
 class server:
@@ -277,9 +271,10 @@ class server:
         self.HOST = SERVER_IP
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_threads_list = list()
-        self.f_flag = 0 # required for PUT method
+        self.f_flag = 0  # required for PUT method
         self.scode = 0  # status code initialization
-    
+
+
     def client_handler(self):
         print("\nINSIDE server.client_handler()\n")
         while True:
@@ -301,13 +296,14 @@ class server:
                 self.f_flag = 1
                 req_list = message.split(b'\r\n\r\n')
                 req_list[0] = req_list[0].decode(errors='ignore')
-            if(len(req_list) == 1):
+            if (len(req_list) == 1):
                 self.status(self.socket_connection, 505)
                 break
             elif len(req_list) == 0:
                 self.status(self.socket_connection, 505)
                 break
-            ent_body = req_list[1]  # not used in GET requests, but in PUT, POST, DELETE etc
+            # not used in GET requests, but in PUT, POST, DELETE etc
+            ent_body = req_list[1]
             header_list = req_list[0].split('\r\n')
             request_line = header_list[0].split(' ')
             print(f"\nmessage : {message}\n")
@@ -345,13 +341,14 @@ class server:
             break
             # if self.method == 'HEAD':
             # send socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag to the httpmethod class for further calling the appropriate methods
-        
-        http_obj = HTTPMethods(self.socket_connection, self.method, self.entity, self.query, self.switcher, self.server_socket, self.conn, self.client_threads_list, PORT, self.f_flag)
+
+        http_obj = HTTPMethods(self.socket_connection, self.method, self.entity, self.query,
+                               self.switcher, self.server_socket, self.client_threads_list, PORT, self.f_flag)
         http_obj.determine_method(req_list)
 
         print("\nEND server.client_handler()\n")
         return
-    
+
 
     def status(self, socket_connection, code):
         """
@@ -361,25 +358,25 @@ class server:
         print("Received STATUS : ", code)
         show_response = ''
         self.scode = code
-        if(int(code) == 505):
+        if (int(code) == 505):
             print("Return Status code : 505")
             show_response += 'HTTP/1.1 505 HTTP version not supported'
-        elif(int(code) == 415):
+        elif (int(code) == 415):
             print("Return Status code : 415")
             show_response += 'HTTP/1.1 415 Unsupported Media Type'
-        elif(int(code) == 403):
+        elif (int(code) == 403):
             print("Return Status code : 403")
             show_response += 'HTTP/1.1 403 Forbidden'
-        elif(int(code) == 404):
+        elif (int(code) == 404):
             print("Return Status code : 404")
             show_response += 'HTTP/1.1 404 Resource Not Found'
         elif (int(code) == 414):
             print("Return Status code : 414")
             show_response += 'HTTP/1.1 414 Request-URI Too Long'
-        elif(int(code) == 500):
+        elif (int(code) == 500):
             print("Return Status code : 500")
             show_response += 'HTTP/1.1 500 Internal Server Error'
-        elif(int(code) == 503):
+        elif (int(code) == 503):
             print("Return Status code : 503")
             show_response += 'HTTP/1.1 503 Service Unavailable'
         show_response += '\r\nServer: ' + self.HOST + ':' + str(PORT)
@@ -398,15 +395,17 @@ class server:
 
     def run_server(self):
         print("\nINSIDE server.run_server()\n")
-        self.server_socket.bind((self.HOST, PORT))    # server will have the IP address 127.0.0.1 and will listen on port 'PORT'
+        # server will have the IP address 127.0.0.1 and will listen on port 'PORT'
+        self.server_socket.bind((self.HOST, PORT))
         self.server_socket.listen(5)
-        print('http://'+ self.HOST+':'+str(PORT)+'/')
-        print("client_threads_list : ",self.client_threads_list)
+        print('http://' + self.HOST+':'+str(PORT)+'/')
+        print("client_threads_list : ", self.client_threads_list)
         while True:
             if len(self.client_threads_list) < MAX_CLIENT_REQUESTS:
                 self.socket_connection, client_addr = self.server_socket.accept()
-                self.client_threads_list.append(self.socket_connection) 
-                print(f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
+                self.client_threads_list.append(self.socket_connection)
+                print(
+                    f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
                 start_new_thread(self.client_handler, ())
                 # break   # at present, if the conn limit exceeds 6, the server is shut down immediately
             else:
@@ -417,7 +416,7 @@ class server:
                 break
 
         self.server_socket.close()  # shut down the server socket
-        
+
         print("\nEND OF server.run_server()\n")
         return
 

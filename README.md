@@ -38,7 +38,7 @@ Before you begin, ensure you have the following prerequisites:
 
    ```bash
     python3 httpserver.py
-    ```
+   ```
 
 
 ## Supported HTTP Methods

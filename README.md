@@ -36,15 +36,14 @@ Before you begin, ensure you have the following prerequisites:
 
 ###  Run the Server
 
-    ```bash
-    python3 httpserver.py
+    ```python3  HTTP-Server
     ```
 
 
 ## Supported HTTP Methods
 
 - **HEAD**: Retrieve the headers for a resource without the actual content.
-- **GET**: Retrieve the content of a resource.
+- **GET**: Retrieve the content of a resource along with the headers.
 - **POST**: Submit data to be processed by a resource, often used for form submissions.
 - **DELETE**: Remove a resource from the server.
 

@@ -1,12 +1,12 @@
 # HTTP Server v1.1
 
-![HTTP Server Logo](https://example.com/server_logo.png)
 
 Welcome to the HTTP Server v1.1 project! This is a Python-based HTTP server that implements version 1.1 of the HTTP protocol. It is designed to handle various HTTP methods including HEAD, GET, PUT, POST, and DELETE. With multi-threading capabilities, it efficiently manages multiple client connections simultaneously.
 
 ## Features
 
 - **HTTP/1.1 Protocol**: Implements the HTTP/1.1 protocol specification.
+- **Built with Socket Programming**: Utilizes socket programming for network communication
 - **Multi-threaded**: Handles multiple client connections concurrently using threading.
 - **Supported HTTP Methods**: Handles HEAD, GET, PUT, POST, and DELETE methods.
 - **Status Codes**: Provides appropriate HTTP status codes in responses.
@@ -17,7 +17,7 @@ Welcome to the HTTP Server v1.1 project! This is a Python-based HTTP server that
 
 Before you begin, ensure you have the following prerequisites:
 
-- Python 3.x installed on your system.
+- Python3 installed on your system.
 - Familiarity with HTTP protocol basics.
 
 ### Installation
@@ -34,13 +34,17 @@ Before you begin, ensure you have the following prerequisites:
     cd  HTTP-Server
     ```
 
-### Usage
+###  Run the Server
+
+        ```python3
+     httpserver.py
+    ```
+
 
 ## Supported HTTP Methods
 
 - **HEAD**: Retrieve the headers for a resource without the actual content.
 - **GET**: Retrieve the content of a resource.
-- **PUT**: Upload a resource to the server or update an existing resource.
 - **POST**: Submit data to be processed by a resource, often used for form submissions.
 - **DELETE**: Remove a resource from the server.
 

@@ -36,8 +36,8 @@ Before you begin, ensure you have the following prerequisites:
 
 ###  Run the Server
 
-    ```bash
-    python3  httpserver.py
+   ```bash
+    python3 httpserver.py
     ```
 
 
@@ -57,4 +57,3 @@ Before you begin, ensure you have the following prerequisites:
 - The project was developed to deepen understanding of HTTP and server technologies.
 ---
 
-Feel free to reach out at your.email@example.com for questions or feedback!

@@ -36,7 +36,8 @@ Before you begin, ensure you have the following prerequisites:
 
 ###  Run the Server
 
-    ```python3  HTTP-Server
+    ```bash
+    python3  httpserver.py
     ```
 
 

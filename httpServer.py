@@ -26,7 +26,6 @@ class HTTPMethods:
         print("\nInside HTTPMethods.determine_method()\n")
         headers = req_list[0]
         data = req_list[1]
-        print(f"self.method : {self.method}")
         if self.method == 'GET':
             self.handle_GET()
         elif self.method == 'POST':
@@ -157,7 +156,6 @@ class HTTPMethods:
         if (content_type != 'application/x-www-form-urlencoded'):
             server(self.PORT).status(self.socket_connection, 415)
         # Process & Extract Post method data
-        print(data)
         index1 = data.find("name=")
         index2 = data.find("&email")
         Name = data[index1+5:index2]
@@ -306,10 +304,6 @@ class server:
             ent_body = req_list[1]
             header_list = req_list[0].split('\r\n')
             request_line = header_list[0].split(' ')
-            print(f"\nmessage : {message}\n")
-            print(f"\nent_body : {ent_body}\n")
-            print(f"\nrequest_line : {request_line}\n")
-            print(f"\nentire req_line : {req_list}\n")
             if len(req_list) < 2:
                 self.status(self.socket_connection, 505)
             self.method = request_line[0]
@@ -319,7 +313,6 @@ class server:
             elif self.entity == favicon or self.entity == 'favicon' or self.entity == 'favicon.ico':
                 self.entity = FAVICON
             self.entity, self.query = breakdown(self.entity)
-            print(f"entity: {self.entity}, query: {self.query}")
             if len(self.entity) > MAX_URL:
                 self.status(self.socket_connection, 414)
                 self.socket_connection.close()
@@ -337,7 +330,6 @@ class server:
             for x in header_list:
                 item = x.split(': ')
                 self.switcher[item[0].strip()] = item[1].strip()
-            print(f"switcher : {self.switcher}")
             break
             # if self.method == 'HEAD':
             # send socket_connection, method, entity, query, switcher, server_socket, conn, client_thread, IP, PORT, f_flag to the httpmethod class for further calling the appropriate methods
@@ -399,13 +391,10 @@ class server:
         self.server_socket.bind((self.HOST, PORT))
         self.server_socket.listen(5)
         print('http://' + self.HOST+':'+str(PORT)+'/')
-        print("client_threads_list : ", self.client_threads_list)
         while True:
             if len(self.client_threads_list) < MAX_CLIENT_REQUESTS:
                 self.socket_connection, client_addr = self.server_socket.accept()
                 self.client_threads_list.append(self.socket_connection)
-                print(
-                    f"\n length : {len(self.client_threads_list)}  client_threads_list : {self.client_threads_list}\n")
                 start_new_thread(self.client_handler, ())
                 # break   # at present, if the conn limit exceeds 6, the server is shut down immediately
             else:

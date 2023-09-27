@@ -66,7 +66,7 @@ The above methods can be used as following:
 3. POST => Use Browser/Postman
 4. PUT => Use Postman
 5. DELETE => Use commandline as follows:
-> curl -X DELETE http://127.0.0.1:portNumber/database.txt/name
+> curl -X DELETE http://127.0.0.1:portNumber/database.txt/id
 
 ---
 

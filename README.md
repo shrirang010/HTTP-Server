@@ -93,16 +93,20 @@ The above methods can be used as following:
 ### GET RESPONSE 
 STEP 1
 ![1](https://github.com/shrirang010/HTTP-Server/assets/103894310/7fc27201-586a-41d8-8241-7e59efe4bc38)
+
 STEP 2
 ![Screenshot from 2023-09-26 10-43-02](https://github.com/shrirang010/HTTP-Server/assets/103894310/7f9cc6df-fbb5-45ef-a570-d7ecc1725815)
+
 STEP 3
 ![Screenshot from 2023-09-26 10-27-27](https://github.com/shrirang010/HTTP-Server/assets/103894310/4cf4dd5f-8090-47b8-945e-0d88cbc07c9c)
 ---
 ### POST REPSPONSE
 STEP 1:
 ![1](https://github.com/shrirang010/HTTP-Server/assets/103894310/7fc27201-586a-41d8-8241-7e59efe4bc38)
+
 STEP 2:
 ![2](https://github.com/shrirang010/HTTP-Server/assets/103894310/dd3f9922-011e-48dc-9ad6-1f935822b7f9)
+
 STEP 3:
 ![3](https://github.com/shrirang010/HTTP-Server/assets/103894310/b30e60d4-32da-494a-bf32-344ebd16b5a6)
 
